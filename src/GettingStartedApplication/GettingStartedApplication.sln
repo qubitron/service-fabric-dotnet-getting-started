@@ -21,7 +21,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatelessBackendService.Int
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StatefulBackendService", "StatefulBackendService\StatefulBackendService.csproj", "{8CD4EAA3-0100-4504-91C4-2EC486BCF953}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Activitiy Support", "Activitiy Support", "{DEA34492-9D1A-435C-9C54-4E6DFDD2D077}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Activity Support", "Activity Support", "{DEA34492-9D1A-435C-9C54-4E6DFDD2D077}"
 	ProjectSection(SolutionItems) = preProject
 		ActivitySupport\Activities.cs = ActivitySupport\Activities.cs
 	EndProjectSection
