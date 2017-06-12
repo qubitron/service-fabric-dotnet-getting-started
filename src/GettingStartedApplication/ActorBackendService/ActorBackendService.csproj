@@ -119,9 +119,7 @@
     <Reference Include="System.ServiceModel" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\ActivitySupport\Activities.cs">
-      <Link>Activities.cs</Link>
-    </Compile>
+    <Compile Include="MyActorService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MyActor.cs" />
     <Compile Include="Program.cs" />
@@ -145,6 +143,10 @@
     <ProjectReference Include="..\ActorBackendService.Interfaces\ActorBackendService.Interfaces.csproj">
       <Project>{AFA658C2-2ED3-490A-9C6A-B1C579CAA941}</Project>
       <Name>ActorBackendService.Interfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Microsoft.ServiceFabric.Remoting.Activities\Microsoft.ServiceFabric.Remoting.Activities.csproj">
+      <Project>{11e7612a-cd62-40f0-b93f-5210199c9209}</Project>
+      <Name>Microsoft.ServiceFabric.Remoting.Activities</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -18,18 +18,23 @@ namespace WebService.Controllers
     using Microsoft.ApplicationInsights.DataContracts;
     using Microsoft.ApplicationInsights;
     using Microsoft.ApplicationInsights.Extensibility;
-    using Microsoft.Diagnostics.Activities;
+    using Microsoft.ServiceFabric.Remoting.Activities;
 
     [Route("api/[controller]")]
     public class StatelessBackendServiceController : Controller
     {
         private readonly ConfigSettings configSettings;
         private readonly StatelessServiceContext serviceContext;
+        private readonly ServiceProxyFactory serviceProxyFactory;
 
         public StatelessBackendServiceController(StatelessServiceContext serviceContext, ConfigSettings settings)
         {
             this.serviceContext = serviceContext;
             this.configSettings = settings;
+            this.serviceProxyFactory = new ServiceProxyFactory(callbackClient =>
+                new ReliableServiceCorrelatingServiceRemotingClientFactory(
+                    fabricTransportRemotingSettings: null,
+                    callbackClient: callbackClient));
         }
 
         // GET: api/values
@@ -41,17 +46,13 @@ namespace WebService.Controllers
 
             ServiceEventSource.Current.ServiceMessage(this.serviceContext, "In the web service about to call the backend!");
 
-            return await Activities.ServiceRemotingDependencyCallAsync(async () =>
-            {
-                // Extract the request id and correlation context headers so they can be passed to the callee, which
-                // will create the correlation
-                Activity currentActivity = Activity.Current;
-                string requestId = currentActivity.Id;
-                long result = await proxy.GetCountAsync(requestId, currentActivity.Baggage).ConfigureAwait(false);
+            // Extract the request id and correlation context headers so they can be passed to the callee, which
+            // will create the correlation
+            Activity currentActivity = Activity.Current;
+            string requestId = currentActivity.Id;
+            long result = await proxy.GetCountAsync(requestId, currentActivity.Baggage).ConfigureAwait(false);
 
-                return this.Json(new CountViewModel() { Count = result });
-            }, 
-            dependencyType: "StatelessServiceFabricService", dependencyName:"StatelessBackendService", target: serviceUri);
+            return this.Json(new CountViewModel() { Count = result });
         }
     }
 }

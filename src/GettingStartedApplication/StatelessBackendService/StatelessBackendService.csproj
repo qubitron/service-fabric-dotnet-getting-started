@@ -113,9 +113,6 @@
     <Reference Include="System.ServiceModel" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\ActivitySupport\Activities.cs">
-      <Link>Activities.cs</Link>
-    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StatelessBackendService.cs" />
     <Compile Include="Program.cs" />
@@ -136,6 +133,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Microsoft.ServiceFabric.Remoting.Activities\Microsoft.ServiceFabric.Remoting.Activities.csproj">
+      <Project>{11e7612a-cd62-40f0-b93f-5210199c9209}</Project>
+      <Name>Microsoft.ServiceFabric.Remoting.Activities</Name>
+    </ProjectReference>
     <ProjectReference Include="..\StatelessBackendService.Interfaces\StatelessBackendService.Interfaces.csproj">
       <Project>{49e73bbd-a3fa-46f3-8314-73417c972f68}</Project>
       <Name>StatelessBackendService.Interfaces</Name>

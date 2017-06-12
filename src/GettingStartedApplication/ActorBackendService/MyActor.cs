@@ -5,19 +5,15 @@
 
 namespace ActorBackendService
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Threading;
-    using System.Threading.Tasks;    
+    using ActorBackendService.Interfaces;
     using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.DataContracts;
     using Microsoft.ApplicationInsights.Extensibility;
     using Microsoft.ApplicationInsights.ServiceFabric;
-    using Microsoft.Diagnostics.Activities;
     using Microsoft.ServiceFabric.Actors;
     using Microsoft.ServiceFabric.Actors.Runtime;
-    using ActorBackendService.Interfaces;
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <remarks>
     /// This class represents an actor.
@@ -51,26 +47,23 @@ namespace ActorBackendService
             telemetryClient = new TelemetryClient(TelemetryConfiguration.Active);
         }
 
-        public Task StartProcessingAsync(string requestId, IEnumerable<KeyValuePair<string, string>> correlationContextHeader, CancellationToken cancellationToken)
+        public async Task StartProcessingAsync(CancellationToken cancellationToken)
         {
-            return Activities.HandleActorRequestAsync(async () =>
+            try
             {
-                try
-                {
-                    this.GetReminder(ReminderName);
-                }
-                catch (ReminderNotFoundException)
-                {
-                    await this.RegisterReminderAsync(ReminderName, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(10));
-                }
+                this.GetReminder(ReminderName);
+            }
+            catch (ReminderNotFoundException)
+            {
+                await this.RegisterReminderAsync(ReminderName, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(10));
+            }
 
-                bool added = await this.StateManager.TryAddStateAsync<long>(StateName, 0);
-                if (!added)
-                {
-                    // value already exists, which means processing has already started.
-                    throw new InvalidOperationException("Processing for this actor has already started.");
-                }
-            }, requestId, requestName: "fabric:/GettingStartedApplication/ActorBackendService/StartProcessingAsync", correlationContext: correlationContextHeader);
+            bool added = await this.StateManager.TryAddStateAsync<long>(StateName, 0);
+            if (!added)
+            {
+                // value already exists, which means processing has already started.
+                throw new InvalidOperationException("Processing for this actor has already started.");
+            }
         }
 
         public async Task ReceiveReminderAsync(string reminderName, byte[] context, TimeSpan dueTime, TimeSpan period)

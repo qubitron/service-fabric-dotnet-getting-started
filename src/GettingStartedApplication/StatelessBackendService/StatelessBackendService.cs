@@ -19,7 +19,8 @@ namespace StatelessBackendService
     using Microsoft.ApplicationInsights;
     using Microsoft.ApplicationInsights.DataContracts;
     using Microsoft.ApplicationInsights.ServiceFabric;
-    using Microsoft.Diagnostics.Activities;
+    using Microsoft.ServiceFabric.Services.Remoting.FabricTransport.Runtime;
+    using Microsoft.ServiceFabric.Remoting.Activities;
 
     /// <summary>
     /// An instance of this class is created for each service instance by the Service Fabric runtime.
@@ -41,17 +42,15 @@ namespace StatelessBackendService
             this.telemetryClient = new TelemetryClient(telemetryConfig);
         }
 
-        public Task<long> GetCountAsync(string requestId, IEnumerable<KeyValuePair<string, string>> correlationContext)
+        public async Task<long> GetCountAsync(string requestId, IEnumerable<KeyValuePair<string, string>> correlationContext)
         {
-            return Activities.HandleServiceRemotingRequestAsync<long>(async () => {
-                ServiceEventSource.Current.ServiceMessage(this.Context, "In the backend service, getting the count!");
-                long result = await Task.FromResult(this.iterations);
-                if (result % 5 == 0)
-                {
-                    throw new InvalidOperationException("Not happy with this number!");
-                }
-                return result;
-            }, requestId: requestId, requestName: "fabric:/GettingStartedApplication/StatelessBackendService/GetCountAsync", correlationContext: correlationContext);
+            ServiceEventSource.Current.ServiceMessage(this.Context, "In the backend service, getting the count!");
+            long result = await Task.FromResult(this.iterations);
+            if (result % 5 == 0)
+            {
+                throw new InvalidOperationException("Not happy with this number!");
+            }
+            return result;
         }
 
         /// <summary>
@@ -62,7 +61,7 @@ namespace StatelessBackendService
         {
             return new ServiceInstanceListener[1]
             {
-                new ServiceInstanceListener(this.CreateServiceRemotingListener)
+                new ServiceInstanceListener(context => new FabricTransportServiceRemotingListener(context, new CorrelatingRemotingMessageHandler(context, this)))
             };
         }
 

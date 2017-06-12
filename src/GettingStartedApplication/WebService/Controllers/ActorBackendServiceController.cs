@@ -15,6 +15,7 @@ namespace WebService.Controllers
     using Microsoft.ServiceFabric.Actors;
     using Microsoft.ServiceFabric.Actors.Client;
     using Microsoft.ServiceFabric.Actors.Query;
+    using Microsoft.ServiceFabric.Remoting.Activities;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -30,12 +31,14 @@ namespace WebService.Controllers
         private readonly FabricClient fabricClient;
         private readonly ConfigSettings configSettings;
         private readonly StatelessServiceContext serviceContext;
+        private readonly ActorProxyFactory actorProxyFactory;
 
         public ActorBackendServiceController(StatelessServiceContext serviceContext, ConfigSettings settings, FabricClient fabricClient)
         {
             this.serviceContext = serviceContext;
             this.configSettings = settings;
             this.fabricClient = fabricClient;
+            this.actorProxyFactory = new ActorProxyFactory(callbackClient => new ActorServiceCorrelatingServiceRemotingClientFactory(callbackClient));
         }
 
         // GET: api/actorbackendservice
@@ -50,7 +53,7 @@ namespace WebService.Controllers
             foreach (Partition partition in partitions)
             {
                 long partitionKey = ((Int64RangePartitionInformation)partition.PartitionInformation).LowKey;
-                IActorService actorServiceProxy = ActorServiceProxy.Create(new Uri(serviceUri), partitionKey);
+                IActorService actorServiceProxy = this.actorProxyFactory.CreateActorServiceProxy<IActorService>(new Uri(serviceUri), partitionKey);
 
                 ContinuationToken continuationToken = null;
 
@@ -72,10 +75,9 @@ namespace WebService.Controllers
         [HttpPost]
         public async Task<IActionResult> PostAsync()
         {
-           
             string serviceUri = this.serviceContext.CodePackageActivationContext.ApplicationName + "/" + this.configSettings.ActorBackendServiceName;
 
-            IMyActor proxy = ActorProxy.Create<IMyActor>(ActorId.CreateRandom(), new Uri(serviceUri));
+            IMyActor proxy = this.actorProxyFactory.CreateActorProxy<IMyActor>(new Uri(serviceUri), ActorId.CreateRandom());
 
             // Create and start a new activity representing the beginning of this outgoing request
             Activity activity = new Activity("HttpOut");
@@ -83,24 +85,9 @@ namespace WebService.Controllers
 
             DateTimeOffset startTime = DateTimeOffset.UtcNow;
 
-            // Extract the request id and correlation context headers so they can be passed to the callee, which
-            // will create the correlation
-            Activity currentActivity = Activity.Current;
-
-            string requestId = currentActivity.Id;
-            Dictionary<string, string> correlationContextHeader = new Dictionary<string, string>();
-            foreach (var pair in currentActivity.Baggage)
-            {
-                correlationContextHeader.Add(pair.Key, pair.Value);
-            }
-
             try
             {
-                await proxy.StartProcessingAsync(requestId, correlationContextHeader, CancellationToken.None);
-            }
-            catch (Exception)
-            {
-                throw;
+                await proxy.StartProcessingAsync(CancellationToken.None);
             }
             finally
             {

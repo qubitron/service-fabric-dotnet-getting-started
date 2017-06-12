@@ -13,15 +13,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\ActivitySupport\Activities.cs" Link="Activities.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="App.config" />
     <None Update="wwwroot\**\*;Views\**\*;Areas\**\Views">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
     <ProjectReference Include="..\ActorBackendService.Interfaces\ActorBackendService.Interfaces.csproj" />
+    <ProjectReference Include="..\Microsoft.ServiceFabric.Remoting.Activities\Microsoft.ServiceFabric.Remoting.Activities.csproj" />
     <ProjectReference Include="..\StatelessBackendService.Interfaces\StatelessBackendService.Interfaces.csproj" />
   </ItemGroup>
 

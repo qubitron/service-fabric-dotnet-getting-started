@@ -28,7 +28,6 @@ namespace Microsoft.Diagnostics.Activities
 
             var operation = telemetryClient.StartOperation<DependencyTelemetry>(dt);
             bool success = true;
-            string responseCode = string.Empty;
             try
             {
                 T retval = await dependencyCallAction().ConfigureAwait(false);
@@ -37,14 +36,12 @@ namespace Microsoft.Diagnostics.Activities
             catch (Exception e)
             {
                 success = false;
-                responseCode = e.ToString();
                 telemetryClient.TrackException(e);
                 throw;
             }
             finally
             {
                 dt.Success = success;
-                dt.ResultCode = responseCode;
                 telemetryClient.StopOperation(operation);
             }
         }
@@ -59,7 +56,6 @@ namespace Microsoft.Diagnostics.Activities
             RequestTelemetry rt = SetUpRequestActivity(requestId, requestName, correlationContext, activityName);
 
             bool success = true;
-            string responseCode = string.Empty;
             try
             {
                 T retval = await requestHandler().ConfigureAwait(false);
@@ -68,7 +64,6 @@ namespace Microsoft.Diagnostics.Activities
             catch (Exception e)
             {
                 success = false;
-                responseCode = e.ToString();
                 telemetryClient.TrackException(e);
                 throw;
             }

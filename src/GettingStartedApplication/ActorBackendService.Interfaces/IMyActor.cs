@@ -19,8 +19,7 @@ namespace ActorBackendService.Interfaces
         /// <summary>
         /// TODO: Replace with your own actor method.
         /// </summary>
-        /// <param name="count"></param>
         /// <returns></returns>
-        Task StartProcessingAsync(string requestId, IEnumerable<KeyValuePair<string, string>> correlationContextHeader, CancellationToken cancellationToken);
+        Task StartProcessingAsync(CancellationToken cancellationToken);
     }
 }
