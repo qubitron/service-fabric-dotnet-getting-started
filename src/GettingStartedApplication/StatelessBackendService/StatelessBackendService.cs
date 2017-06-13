@@ -44,6 +44,8 @@ namespace StatelessBackendService
 
         public async Task<long> GetCountAsync(string requestId, IEnumerable<KeyValuePair<string, string>> correlationContext)
         {
+            CorrelatingRemotingMessageHandler.SetCurrentOperationName("GetCountAsync");
+            
             ServiceEventSource.Current.ServiceMessage(this.Context, "In the backend service, getting the count!");
             long result = await Task.FromResult(this.iterations);
             if (result % 5 == 0)

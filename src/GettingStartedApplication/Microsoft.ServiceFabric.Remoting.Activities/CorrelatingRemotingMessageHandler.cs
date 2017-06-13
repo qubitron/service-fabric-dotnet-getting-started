@@ -10,11 +10,13 @@ using Microsoft.ServiceFabric.Actors.Runtime;
 using Microsoft.ServiceFabric.Services.Remoting;
 using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Fabric;
 using System.IO;
 using System.Runtime.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -26,6 +28,9 @@ namespace Microsoft.ServiceFabric.Remoting.Activities
 
         private IServiceRemotingMessageHandler innerHandler;
         private TelemetryClient telemetryClient;
+
+        public static AsyncLocal<int> operationKey = new AsyncLocal<int>();
+        private static ConcurrentDictionary<int, string> _operationNames = new ConcurrentDictionary<int, string>();
 
         public CorrelatingRemotingMessageHandler(ServiceContext serviceContext, IService service)
         {
@@ -41,7 +46,7 @@ namespace Microsoft.ServiceFabric.Remoting.Activities
 
         public void HandleOneWay(IServiceRemotingRequestContext requestContext, ServiceRemotingMessageHeaders messageHeaders, byte[] requestBody)
         {
-            HandleAndTrackRequestAsync(messageHeaders, () => 
+            HandleAndTrackRequestAsync(messageHeaders, () =>
             {
                 this.innerHandler.HandleOneWay(requestContext, messageHeaders, requestBody);
                 return Task.FromResult<byte[]>(null);
@@ -50,7 +55,11 @@ namespace Microsoft.ServiceFabric.Remoting.Activities
 
         public Task<byte[]> RequestResponseAsync(IServiceRemotingRequestContext requestContext, ServiceRemotingMessageHeaders messageHeaders, byte[] requestBody)
         {
-            return HandleAndTrackRequestAsync(messageHeaders, () => this.innerHandler.RequestResponseAsync(requestContext, messageHeaders, requestBody));
+            return HandleAndTrackRequestAsync(messageHeaders, () => {
+                var result = this.innerHandler.RequestResponseAsync(requestContext, messageHeaders, requestBody);
+                return result;
+            });
+
         }
 
         private void Initialize()
@@ -59,10 +68,26 @@ namespace Microsoft.ServiceFabric.Remoting.Activities
             this.baggageSerializer = new Lazy<DataContractSerializer>(() => new DataContractSerializer(typeof(IEnumerable<KeyValuePair<string, string>>)));
         }
 
+        public class CorrelationData
+        {
+            public string operationName;
+        }
+
+        public static void SetCurrentOperationName(string operationName)
+        {
+            _operationNames[CorrelatingRemotingMessageHandler.operationKey.Value] = operationName;
+        }
+
         private async Task<byte[]> HandleAndTrackRequestAsync(ServiceRemotingMessageHeaders messageHeaders, Func<Task<byte[]>> doHandleRequest)
         {
             RequestTelemetry rt = SetUpRequestActivity(messageHeaders);
-
+            var rand = new Random();
+            int key = rand.Next();
+            while (!_operationNames.TryAdd(key, "Unknown"))
+            {
+                key = rand.Next();
+            }
+            operationKey.Value = key;
             bool success = true;
             try
             {
@@ -78,9 +103,16 @@ namespace Microsoft.ServiceFabric.Remoting.Activities
             finally
             {
                 Activity.Current.Stop();
-
+                
                 rt.Stop(Stopwatch.GetTimestamp());
                 rt.Success = success;
+
+                string operationName;
+                if (_operationNames.TryRemove(key, out operationName))
+                {
+                    rt.Name = operationName;
+                }
+
                 telemetryClient.TrackRequest(rt);
             }
         }
