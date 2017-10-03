@@ -15,6 +15,7 @@ namespace WebService.Controllers
     using Microsoft.ServiceFabric.Actors;
     using Microsoft.ServiceFabric.Actors.Client;
     using Microsoft.ServiceFabric.Actors.Query;
+    using Microsoft.ApplicationInsights.ServiceFabric.Remoting.Activities;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -23,6 +24,7 @@ namespace WebService.Controllers
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.ServiceFabric.Actors.Remoting.FabricTransport;
 
     [Route("api/[controller]")]
     public class ActorBackendServiceController : Controller
@@ -30,12 +32,17 @@ namespace WebService.Controllers
         private readonly FabricClient fabricClient;
         private readonly ConfigSettings configSettings;
         private readonly StatelessServiceContext serviceContext;
+        private readonly IActorProxyFactory actorProxyFactory;
 
         public ActorBackendServiceController(StatelessServiceContext serviceContext, ConfigSettings settings, FabricClient fabricClient)
         {
             this.serviceContext = serviceContext;
             this.configSettings = settings;
             this.fabricClient = fabricClient;
+            this.actorProxyFactory = new CorrelatingActorProxyFactory(
+                serviceContext,
+                callbackClient => new FabricTransportActorRemotingClientFactory(null, callbackClient, null, null, null)
+                );
         }
 
         // GET: api/actorbackendservice
@@ -50,7 +57,7 @@ namespace WebService.Controllers
             foreach (Partition partition in partitions)
             {
                 long partitionKey = ((Int64RangePartitionInformation)partition.PartitionInformation).LowKey;
-                IActorService actorServiceProxy = ActorServiceProxy.Create(new Uri(serviceUri), partitionKey);
+                IActorService actorServiceProxy = this.actorProxyFactory.CreateActorServiceProxy<IActorService>(new Uri(serviceUri), partitionKey);
 
                 ContinuationToken continuationToken = null;
 
@@ -72,57 +79,11 @@ namespace WebService.Controllers
         [HttpPost]
         public async Task<IActionResult> PostAsync()
         {
-           
             string serviceUri = this.serviceContext.CodePackageActivationContext.ApplicationName + "/" + this.configSettings.ActorBackendServiceName;
 
-            IMyActor proxy = ActorProxy.Create<IMyActor>(ActorId.CreateRandom(), new Uri(serviceUri));
+            IMyActor proxy = this.actorProxyFactory.CreateActorProxy<IMyActor>(new Uri(serviceUri), ActorId.CreateRandom());
 
-            // Create and start a new activity representing the beginning of this outgoing request
-            Activity activity = new Activity("HttpOut");
-            activity.Start();
-
-            DateTimeOffset startTime = DateTimeOffset.UtcNow;
-
-            // Extract the request id and correlation context headers so they can be passed to the callee, which
-            // will create the correlation
-            Activity currentActivity = Activity.Current;
-
-            string requestId = currentActivity.Id;
-            Dictionary<string, string> correlationContextHeader = new Dictionary<string, string>();
-            foreach (var pair in currentActivity.Baggage)
-            {
-                correlationContextHeader.Add(pair.Key, pair.Value);
-            }
-
-            try
-            {
-                await proxy.StartProcessingAsync(requestId, correlationContextHeader, CancellationToken.None);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                //always stop activity if it was started
-                if (activity != null)
-                {
-                    activity.Stop();
-                }
-                DateTimeOffset endTime = DateTimeOffset.UtcNow;
-                DependencyTelemetry telemetry = new DependencyTelemetry(
-                    "HTTP", // dependencyTypeName
-                    serviceUri, // target
-                    "POST " + serviceUri, // dependencyName
-                    serviceUri, // data
-                    startTime, // startTime
-                    endTime - startTime, // duration
-                    "OK", // resultCode
-                    true); // success
-                telemetry.Id = activity.Id;
-                TelemetryClient client = new TelemetryClient(TelemetryConfiguration.Active);
-                client.TrackDependency(telemetry);
-            }
+            await proxy.StartProcessingAsync(CancellationToken.None);
 
             return this.Json(true);
           

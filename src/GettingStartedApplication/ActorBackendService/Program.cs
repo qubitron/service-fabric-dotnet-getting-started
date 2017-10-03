@@ -24,7 +24,7 @@ namespace ActorBackendService
                 // For more information, see https://aka.ms/servicefabricactorsplatform
 
                 ActorRuntime.RegisterActorAsync<MyActor>(
-                    (context, actorType) => new ActorService(context, actorType)).GetAwaiter().GetResult();
+                    (context, actorType) => new MyActorService(context, actorType)).GetAwaiter().GetResult();
 
                 Thread.Sleep(Timeout.Infinite);
             }

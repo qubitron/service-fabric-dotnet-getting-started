@@ -28,7 +28,6 @@ namespace StatefulBackendService
             : base(context)
         {
             var telemetryConfig = TelemetryConfiguration.Active;
-            FabricTelemetryInitializerExtension.SetServiceCallContext(context);
             var config = context.CodePackageActivationContext.GetConfigurationPackageObject("Config");
             var appInsights = config.Settings.Sections["ApplicationInsights"];
             telemetryConfig.InstrumentationKey = appInsights.Parameters["InstrumentationKey"].Value;
