@@ -19,7 +19,7 @@ namespace StatelessBackendService
     using Microsoft.ApplicationInsights;
     using Microsoft.ApplicationInsights.DataContracts;
     using Microsoft.ApplicationInsights.ServiceFabric;
-    using Microsoft.ServiceFabric.Services.Remoting.FabricTransport.Runtime;
+    using Microsoft.ServiceFabric.Services.Remoting.V1.FabricTransport.Runtime;
     using Microsoft.ApplicationInsights.ServiceFabric.Remoting.Activities;
 
     /// <summary>

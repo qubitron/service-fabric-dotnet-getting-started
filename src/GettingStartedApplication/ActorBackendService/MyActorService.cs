@@ -4,7 +4,7 @@
 // ------------------------------------------------------------
 
 using Microsoft.ServiceFabric.Actors;
-using Microsoft.ServiceFabric.Actors.Remoting.FabricTransport.Runtime;
+using Microsoft.ServiceFabric.Actors.Remoting.V1.FabricTransport.Runtime;
 using Microsoft.ServiceFabric.Actors.Runtime;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.ServiceFabric;

@@ -19,7 +19,7 @@ namespace WebService.Controllers
     using Microsoft.ApplicationInsights;
     using Microsoft.ApplicationInsights.Extensibility;
     using Microsoft.ApplicationInsights.ServiceFabric.Remoting.Activities;
-    using Microsoft.ServiceFabric.Services.Remoting.FabricTransport.Client;
+    using Microsoft.ServiceFabric.Services.Remoting.V1.FabricTransport.Client;
 
     [Route("api/[controller]")]
     public class StatelessBackendServiceController : Controller

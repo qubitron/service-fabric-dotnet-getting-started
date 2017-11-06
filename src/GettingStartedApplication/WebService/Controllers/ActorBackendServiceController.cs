@@ -8,23 +8,18 @@
 namespace WebService.Controllers
 {
     using ActorBackendService.Interfaces;
-    using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.DataContracts;
-    using Microsoft.ApplicationInsights.Extensibility;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.ServiceFabric.Actors;
     using Microsoft.ServiceFabric.Actors.Client;
     using Microsoft.ServiceFabric.Actors.Query;
+    using Microsoft.ServiceFabric.Actors.Remoting.V1.FabricTransport.Client;
     using Microsoft.ApplicationInsights.ServiceFabric.Remoting.Activities;
     using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Fabric;
     using System.Fabric.Query;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.ServiceFabric.Actors.Remoting.FabricTransport;
 
     [Route("api/[controller]")]
     public class ActorBackendServiceController : Controller
