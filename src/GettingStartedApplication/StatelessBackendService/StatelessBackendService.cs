@@ -7,7 +7,6 @@ namespace StatelessBackendService
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Fabric;
     using System.Threading;
     using System.Threading.Tasks;
@@ -17,10 +16,7 @@ namespace StatelessBackendService
     using Microsoft.ServiceFabric.Services.Runtime;
     using Microsoft.ApplicationInsights.Extensibility;
     using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.DataContracts;
     using Microsoft.ApplicationInsights.ServiceFabric;
-    using Microsoft.ServiceFabric.Services.Remoting.FabricTransport.Runtime;
-    using Microsoft.ApplicationInsights.ServiceFabric.Remoting.Activities;
 
     /// <summary>
     /// An instance of this class is created for each service instance by the Service Fabric runtime.
@@ -69,10 +65,7 @@ namespace StatelessBackendService
         /// <returns>A collection of listeners.</returns>
         protected override IEnumerable<ServiceInstanceListener> CreateServiceInstanceListeners()
         {
-            return new ServiceInstanceListener[1]
-            {
-                new ServiceInstanceListener(context => new FabricTransportServiceRemotingListener(context, new CorrelatingRemotingMessageHandler(context, this)))
-            };
+            return this.CreateServiceRemotingInstanceListeners();
         }
 
         /// <summary>

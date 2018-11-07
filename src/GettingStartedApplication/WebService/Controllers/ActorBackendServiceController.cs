@@ -8,23 +8,16 @@
 namespace WebService.Controllers
 {
     using ActorBackendService.Interfaces;
-    using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.DataContracts;
-    using Microsoft.ApplicationInsights.Extensibility;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.ServiceFabric.Actors;
     using Microsoft.ServiceFabric.Actors.Client;
     using Microsoft.ServiceFabric.Actors.Query;
-    using Microsoft.ApplicationInsights.ServiceFabric.Remoting.Activities;
     using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Fabric;
     using System.Fabric.Query;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.ServiceFabric.Actors.Remoting.FabricTransport;
 
     [Route("api/[controller]")]
     public class ActorBackendServiceController : Controller
@@ -32,17 +25,12 @@ namespace WebService.Controllers
         private readonly FabricClient fabricClient;
         private readonly ConfigSettings configSettings;
         private readonly StatelessServiceContext serviceContext;
-        private readonly IActorProxyFactory actorProxyFactory;
 
         public ActorBackendServiceController(StatelessServiceContext serviceContext, ConfigSettings settings, FabricClient fabricClient)
         {
             this.serviceContext = serviceContext;
             this.configSettings = settings;
             this.fabricClient = fabricClient;
-            this.actorProxyFactory = new CorrelatingActorProxyFactory(
-                serviceContext,
-                callbackClient => new FabricTransportActorRemotingClientFactory(null, callbackClient, null, null, null)
-                );
         }
 
         // GET: api/actorbackendservice
@@ -57,7 +45,7 @@ namespace WebService.Controllers
             foreach (Partition partition in partitions)
             {
                 long partitionKey = ((Int64RangePartitionInformation)partition.PartitionInformation).LowKey;
-                IActorService actorServiceProxy = this.actorProxyFactory.CreateActorServiceProxy<IActorService>(new Uri(serviceUri), partitionKey);
+                IActorService actorServiceProxy = ActorServiceProxy.Create(new Uri(serviceUri), partitionKey);
 
                 ContinuationToken continuationToken = null;
 
@@ -81,7 +69,7 @@ namespace WebService.Controllers
         {
             string serviceUri = this.serviceContext.CodePackageActivationContext.ApplicationName + "/" + this.configSettings.ActorBackendServiceName;
 
-            IMyActor proxy = this.actorProxyFactory.CreateActorProxy<IMyActor>(new Uri(serviceUri), ActorId.CreateRandom());
+            IMyActor proxy = ActorProxy.Create<IMyActor>(ActorId.CreateRandom(), new Uri(serviceUri));
 
             await proxy.StartProcessingAsync(CancellationToken.None);
 
